@@ -24,7 +24,7 @@ func main() {
 	flag.Parse()
 
 	if len(*url) == 0 || len(*output) == 0 {
-		fmt.Fprintf(os.Stderr, "%s -u <<url>> <<output path>>", os.Args[0])
+		fmt.Fprintf(os.Stderr, "%s -u <<url>> -o <<output path>>", os.Args[0])
 		os.Exit(1)
 	}
 
