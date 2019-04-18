@@ -17,10 +17,23 @@ const (
 	tmpDirMode = 0744
 )
 
+// below variable assign by compiler
+var (
+	Version string
+	Build   string
+)
+
 func main() {
 	url := flag.String("u", "", "the url to download")
 	output := flag.String("o", "", "output path")
 	worker := flag.Int("w", 6, "worker to download")
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Version %s\n", Version)
+		fmt.Fprintf(os.Stderr, "Build %s\n", Build)
+		fmt.Fprintln(os.Stderr, "usage:")
+		flag.PrintDefaults()
+	}
+
 	flag.Parse()
 
 	if len(*url) == 0 || len(*output) == 0 {

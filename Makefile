@@ -8,13 +8,16 @@ GOBASE := $(shell pwd)
 GOPATH := $(GOBASE)/vendor:$(GOBASE)
 GOBIN := $(GOBASE)/bin
 GOFILES = $(shell find . -type f -name '*.go' -not -path "./vendor/*")
+
 # Use linker flags to provide version/build settings
 LDFLAGS=-ldflags "-X=main.Version=$(VERSION) -X=main.Build=$(BUILD)"
+STATIC_FLAGS=-ldflags '-w -extldflags "-static"'
+
 
 
 build: $(GOFILES)
 	@echo "  >  Building binary..."
-	GOPATH=$(GOPATH) GOBIN=$(GOBIN) go build $(LDFLAGS) -o $(GOBIN)/$(PROJECTNAME) $(GOFILES)
+	CGO_ENABLED=0 GOPATH=$(GOPATH) GOBIN=$(GOBIN) go build $(STATIC_FLAGS) $(LDFLAGS)  -o $(GOBIN)/$(PROJECTNAME) $(GOFILES)
 
 install:
 	@GOPATH=$(GOPATH) GOBIN=$(GOBIN) go install $(GOFILES)
