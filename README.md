@@ -2,6 +2,8 @@
 
 A multipart, resumable, multithread downloader
 
+![demo](gif/demo.gif)
+
 ## Usage
 
 ```
