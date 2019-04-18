@@ -18,6 +18,7 @@ Usage of godownloader:
 
 
 ```sh
+go install
 godownloader -u https://cdn.changelog.com/uploads/gotime/81/go-time-81.mp3 -o ./go-time-81.mp3
 ```
 
