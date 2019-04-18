@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 
 	"github.com/pkg/errors"
 )
@@ -41,9 +42,15 @@ func main() {
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
-	_ = cancel
 
 	if isRangeAccept {
+
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt)
+		go func() {
+			<-c
+			cancel()
+		}()
 
 		if err := createDir(tmpDir, tmpDirMode); err != nil {
 			log.Fatalf("could not create tmp dir '%s': %v", tmpDir, err)

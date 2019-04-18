@@ -53,7 +53,8 @@ func newMiltiDownloader(client *http.Client, worker int, ctx context.Context, ur
 	bar := pb.StartNew(len(chunks))
 	bar.SetRefreshRate(time.Second)
 
-	bar.ShowTimeLeft = true
+	bar.ShowTimeLeft = false
+
 	m := &MultiDownloader{
 		client: client,
 		worker: worker,
@@ -71,38 +72,51 @@ func newMiltiDownloader(client *http.Client, worker int, ctx context.Context, ur
 
 func (m *MultiDownloader) startWorker() {
 
-	for c := range m.chunk {
-		if err := c.create(); err != nil {
-			m.err <- err
+	for {
+		select {
+		case <-m.ctx.Done():
 			return
-		}
+		case c := <-m.chunk:
+			if err := c.create(); err != nil {
+				m.err <- err
+				return
+			}
 
-		done, err := c.isDone()
-		if err != nil {
-			m.err <- err
-			return
-		}
+			done, err := c.isDone()
+			if err != nil {
+				m.err <- err
+				return
+			}
 
-		if done {
+			if done {
+				m.done <- struct{}{}
+				continue
+			}
+
+			byterange := fmt.Sprintf("%d-%d", c.start, c.end)
+			if err := downloadFile(*m.client, m.url, c.path, byterange); err != nil {
+				m.err <- err
+				return
+			}
 			m.done <- struct{}{}
-			continue
 		}
 
-		byterange := fmt.Sprintf("%d-%d", c.start, c.end)
-		if err := downloadFile(*m.client, m.url, c.path, byterange); err != nil {
-			m.err <- err
-			return
-		}
-		m.done <- struct{}{}
 	}
 
 }
 
 func (m *MultiDownloader) startFeeder() {
-	for i := range m.chunks {
-		m.chunk <- m.chunks[i]
+	for {
+		select {
+		case <-m.ctx.Done():
+			return
+		default:
+			for i := range m.chunks {
+				m.chunk <- m.chunks[i]
+			}
+		}
 	}
-	close(m.chunk)
+
 }
 
 func (m *MultiDownloader) mergeChunks() error {
@@ -148,6 +162,8 @@ loop:
 				m.bar.Finish()
 				break loop
 			}
+		case <-m.ctx.Done():
+			return fmt.Errorf("got cancel during downloading")
 		case err := <-m.err:
 			return err
 		}
