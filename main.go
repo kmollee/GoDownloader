@@ -28,7 +28,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Fprintf(os.Stdout, "download from %s => %s", *url, *output)
+	fmt.Fprintf(os.Stdout, "download from %s => %s\n", *url, *output)
 
 	// to change the flags on the default logger
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -36,7 +36,7 @@ func main() {
 
 	size, isRangeAccept, err := fetchResourceLength(client, *url)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "ERR: %v", err)
+		fmt.Fprintf(os.Stderr, "could not fetch resource: %v", err)
 		os.Exit(1)
 	}
 
@@ -56,7 +56,7 @@ func main() {
 			log.Fatalf("could not create tmp dir '%s': %v", tmpDir, err)
 		}
 		chunks := newChunks(tmpDir, size)
-		m := newMiltiDownloader(client, *worker, ctx, *url, *output, chunks)
+		m := newMiltiDownloader(ctx, client, *worker, *url, *output, chunks)
 		err := m.Start()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "could not download due error: %v", err)
@@ -90,7 +90,7 @@ func fetchResourceLength(client *http.Client, url string) (int64, bool, error) {
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return 0, false, fmt.Errorf("could not get resource")
+		return 0, false, fmt.Errorf("could not get resource on url: %s", url)
 	}
 
 	content, ok := res.Header["Accept-Ranges"]

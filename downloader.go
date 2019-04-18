@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"time"
@@ -29,7 +28,7 @@ const (
 	MinChunkSize int64 = int64(1 * MB)
 )
 
-type MultiDownloader struct {
+type multiDownloader struct {
 	client *http.Client
 	worker int
 
@@ -48,14 +47,14 @@ type MultiDownloader struct {
 	bar *pb.ProgressBar
 }
 
-func newMiltiDownloader(client *http.Client, worker int, ctx context.Context, url string, dst string, chunks []*Chunk) *MultiDownloader {
+func newMiltiDownloader(ctx context.Context, client *http.Client, worker int, url string, dst string, chunks []*Chunk) *multiDownloader {
 
 	bar := pb.StartNew(len(chunks))
 	bar.SetRefreshRate(time.Second)
 
 	bar.ShowTimeLeft = false
 
-	m := &MultiDownloader{
+	m := &multiDownloader{
 		client: client,
 		worker: worker,
 		ctx:    ctx,
@@ -70,7 +69,7 @@ func newMiltiDownloader(client *http.Client, worker int, ctx context.Context, ur
 	return m
 }
 
-func (m *MultiDownloader) startWorker() {
+func (m *multiDownloader) startWorker() {
 
 	for {
 		select {
@@ -105,7 +104,7 @@ func (m *MultiDownloader) startWorker() {
 
 }
 
-func (m *MultiDownloader) startFeeder() {
+func (m *multiDownloader) startFeeder() {
 	for {
 		select {
 		case <-m.ctx.Done():
@@ -119,10 +118,9 @@ func (m *MultiDownloader) startFeeder() {
 
 }
 
-func (m *MultiDownloader) mergeChunks() error {
+func (m *multiDownloader) mergeChunks() error {
 	f, err := os.Create(m.dst)
 	if err != nil {
-		log.Printf("ERR!")
 		return errors.Wrapf(err, "could not create output file: %s", m.dst)
 	}
 	defer f.Close()
@@ -142,7 +140,7 @@ func (m *MultiDownloader) mergeChunks() error {
 	return nil
 }
 
-func (m *MultiDownloader) Start() error {
+func (m *multiDownloader) Start() error {
 	if m.worker > len(m.chunks) {
 		m.worker = len(m.chunks)
 	}
