@@ -105,15 +105,9 @@ func (m *multiDownloader) startWorker() {
 }
 
 func (m *multiDownloader) startFeeder() {
-	for {
-		select {
-		case <-m.ctx.Done():
-			return
-		default:
-			for i := range m.chunks {
-				m.chunk <- m.chunks[i]
-			}
-		}
+
+	for i := range m.chunks {
+		m.chunk <- m.chunks[i]
 	}
 
 }
